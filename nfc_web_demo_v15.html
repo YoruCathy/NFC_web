@@ -1,0 +1,73 @@
+<p>
+  <button class="btn btn-lg btn-default" onclick="readWriteNfc()">Test NFC Read/Write</button>
+  <script>
+
+  function readWriteNfc() {
+  if ('nfc' in navigator) {
+    navigator.nfc.watch(function (message) {
+        consoleLog("NFC message received from the lock- " );
+        //if (message.data[0].recordType === 'empty') {
+          navigator.nfc.push([{
+            url: message.url,
+            data: [{
+              recordType: "text",
+              data: 'Hello World'
+            }]
+          }]);
+          //navigator.nfc.push(
+  					//'{ "prop1": "value1", "prop2": "value2" }'
+			//).then(() => {
+  			//console.log("Message pushed.");
+		//}).catch((error) => {
+  		//console.log("Push failed :-( try again.");
+		//});
+        //}
+        processMessage(message);
+      }, {mode: 'any'})
+      .then(() => consoleLog("Place Your Phone Near Your Lock."))
+      .catch(err => consoleLog("Please place again.ERROR: " + err.name));
+  } else {
+    consoleLog('NFC API not supported.-');
+  }
+}
+
+function consoleLog(data) {
+  var logElement = document.getElementById('log');
+  logElement.innerHTML += '\n' + data;
+}
+
+function processMessage(message) {
+  message.data.forEach(function (record) {
+    if (record.recordType == "string") {
+      consoleLog('Data is string: ' + record.data);
+    } else if (record.recordType == "json") {
+      processJSON(record.data);
+    } else if (record.recordType == "url") {
+      consoleLog("Data is URL: " + record.data);
+    } else if (record.recordType == "opaque" && record.mediaType == 'image/png') {
+      processPng(record.data);
+    };
+  });
+}
+
+function processPng(data) {
+  consoleLog("Known image/png data");
+
+  var img = document.createElement("img");
+  img.src = URL.createObjectURL(new Blob(data, 'image/png'));
+  img.onload = function () {
+    window.URL.revokeObjectURL(this.src);
+  };
+};
+
+function processJSON(data) {
+  var obj = JSON.parse(data);
+  consoleLog("JSON data: " + obj.myProperty.toString());
+};
+  </script>
+
+</p>
+
+<pre id="log"></pre>
+
+<p><small>Based on the code snippets from <a href="https://w3c.github.io/web-nfc/#examples">specification draft</a>.</small></p>
